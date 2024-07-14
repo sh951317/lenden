@@ -1,0 +1,120 @@
+To set up Kubernetes resources like `pipeline.yaml`, `service.yaml`, `imagestream.yaml`, and `deployment.yaml`, you'll typically have a `values.yaml` file that centralizes the configuration values. Here's an example of how such a `values.yaml` file might look, along with snippets of the corresponding YAML files using these values.
+
+### values.yaml
+```yaml
+# values.yaml
+app:
+  name: my-app
+  image: my-app-image
+  tag: latest
+  namespace: my-namespace
+
+pipeline:
+  name: my-app-pipeline
+  gitUrl: https://github.com/my-repo/my-app.git
+  gitBranch: main
+
+service:
+  port: 80
+  targetPort: 8080
+
+deployment:
+  replicas: 3
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+```
+
+### pipeline.yaml
+```yaml
+# pipeline.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: {{ .Values.pipeline.name }}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: {{ .Values.pipeline.gitUrl }}
+        - name: revision
+          value: {{ .Values.pipeline.gitBranch }}
+    # Additional tasks can be added here
+```
+
+### service.yaml
+```yaml
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+  selector:
+    app: {{ .Values.app.name }}
+```
+
+### imagestream.yaml
+```yaml
+# imagestream.yaml
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  tags:
+    - name: {{ .Values.app.tag }}
+      from:
+        kind: DockerImage
+        name: {{ .Values.app.image }}:{{ .Values.app.tag }}
+      importPolicy: {}
+```
+
+### deployment.yaml
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+        - name: {{ .Values.app.name }}
+          image: {{ .Values.app.image }}:{{ .Values.app.tag }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          resources:
+            limits:
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
+```
+
+In these examples, placeholders like `{{ .Values.app.name }}` will be replaced with the corresponding values from `values.yaml`. This approach centralizes your configuration, making it easier to manage and update. 
+
+To use these values in your YAML files, you typically use a templating engine like Helm. If you are using Helm, you would place these templates in your Helm chart and reference the `values.yaml` file in your Helm commands.
