@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('git checkout') {
+            steps {
+                script {
+                    git branch: 'dev', credentialsId: 'sample_eip_anil_helm_git', poll: false, url: 'https://github.axa.com/anil-choppadandi-ext/values-repo.git'
+                }
+            }
+        }
+
+        stage('argocd application') {
+            steps {
+                script {
+                    // Apply the configuration, which updates if exists or creates if not
+                    sh 'oc apply -f application.yaml'
+                }
+            }
+        }
+    }
+}
