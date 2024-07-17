@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('git checkout') {
+            steps {
+                script {
+                    git branch: 'dev', credentialsId: 'sample_eip_anil_helm_git', poll: false, url: 'https://github.axa.com/anil-choppadandi-ext/values-repo.git'
+                }
+            }
+        }
+
+        stage('argocd application') {
+            steps {
+                script {
+                    // Check if application exists and delete it if it does
+                    sh '''
+                    if oc get applications.argoproj.io/helm-deployment; then
+                        oc delete applications.argoproj.io/helm-deployment
+                    fi
+                    oc create -f application.yaml
+                    '''
+                }
+            }
+        }
+    }
+}
