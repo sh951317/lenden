@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define any environment variables here
+        DEV_BRANCH = 'dev'
+        MASTER_BRANCH = 'master'
+        REPO_URL = 'https://github.com/your-repo.git'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Clone the repository
+                    git branch: "${DEV_BRANCH}", url: "${REPO_URL}"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Add your build steps here
+                sh 'echo "Building..."'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Add your test steps here
+                sh 'echo "Running tests..."'
+            }
+        }
+
+        stage('Merge') {
+            steps {
+                script {
+                    // Ensure we're on the DEV_BRANCH
+                    sh "git checkout ${DEV_BRANCH}"
+
+                    // Merge dev into master
+                    sh "git checkout ${MASTER_BRANCH}"
+                    sh "git merge ${DEV_BRANCH}"
+
+                    // Push changes to the repository
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials-id', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh """
+                        git config user.name "${GIT_USERNAME}"
+                        git config user.email "you@example.com"
+                        git push origin ${MASTER_BRANCH}
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Merge successful!'
+        }
+        failure {
+            echo 'Merge failed.'
+        }
+    }
+}
