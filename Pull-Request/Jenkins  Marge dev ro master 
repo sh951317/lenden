@@ -1,0 +1,74 @@
+Here is an example Jenkins pipeline code to merge a pull request from the dev branch to the master branch:
+```
+pipeline {
+    agent any
+    triggers {
+        github(
+            branch: 'dev',
+            events: ['PUSH']
+        )
+    }
+    stages {
+        stage('Merge Pull Request') {
+            steps {
+                // Get the pull request ID from the GitHub webhook
+                def pullRequestId = github.pullRequestId
+                
+                // Merge the pull request into the master branch
+                git {
+                    remote {
+                        name: 'origin'
+                        url: '(link unavailable)<your-username>/<your-repo>.git'
+                    }
+                    config {
+                        branch: 'master'
+                        merge: true
+                    }
+                    merge(pullRequestId)
+                }
+                
+                // Push the merged changes to the master branch
+                git {
+                    remote {
+                        name: 'origin'
+                        url: '(link unavailable)<your-username>/<your-repo>.git'
+                    }
+                    config {
+                        branch: 'master'
+                        push: true
+                    }
+                    push()
+                }
+            }
+        }
+    }
+}
+```
+This pipeline code uses the GitHub webhook to trigger the pipeline when a push event occurs on the dev branch. It then merges the pull request into the master branch using the `git merge` command and pushes the merged changes to the master branch using the `git push` command.
+
+Note: You need to replace `<your-username>` and `<your-repo>` with your actual GitHub username and repository name.
+
+Also, you can use `github` step to merge the pull request, it will handle the merge and commit for you:
+```
+pipeline {
+    agent any
+    triggers {
+        github(
+            branch: 'dev',
+            events: ['PUSH']
+        )
+    }
+    stages {
+        stage('Merge Pull Request') {
+            steps {
+                github(
+                    merge: true,
+                    pullRequest: true,
+                    branch: 'master'
+                )
+            }
+        }
+    }
+}
+```
+This way you don't need to specify the git commands explicitly.
