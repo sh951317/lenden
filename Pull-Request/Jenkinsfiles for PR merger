@@ -1,3 +1,6 @@
+Here's a basic Jenkinsfile that automates the process of merging a pull request from the `dev` branch to the `master` branch. This example assumes you're using Git and GitHub, and it also includes basic steps for building and testing the code before merging.
+
+```groovy
 pipeline {
     agent any
 
@@ -50,3 +53,20 @@ pipeline {
         }
     }
 }
+```
+
+### Explanation:
+1. **Environment Variables**: These store information like credentials and branch names.
+2. **Checkout**: Checks out the `dev` branch.
+3. **Build**: Runs your build script.
+4. **Test**: Runs your test script.
+5. **Merge to Master**: Merges the `dev` branch into the `master` branch and pushes the changes back to GitHub.
+6. **Post Actions**: Cleans up the workspace after the job runs.
+
+### Requirements:
+- Ensure you have Jenkins configured with the necessary GitHub credentials.
+- Replace `github-credentials-id` with your actual Jenkins credentials ID.
+- Replace `your-repo/your-project` with your actual GitHub repository.
+- Modify the build and test steps to match your project's requirements. 
+
+This Jenkinsfile assumes a basic workflow. You might need to add more stages or steps depending on your specific requirements.
