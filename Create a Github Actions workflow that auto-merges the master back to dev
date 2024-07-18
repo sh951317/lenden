@@ -1,0 +1,44 @@
+
+Create a Github Actions workflow that auto-merges the master back to dev
+Alexander Karlstad
+Alexander Karlstad
+
+·
+Follow
+
+1 min read
+·
+Feb 14, 2020
+
+Listen
+
+
+Share
+
+If you’re somehow dependant on having an up-to-date dev branch with the latest tags from the master branch available, you could set this up using Github Actions.
+
+Below is an example workflow file that will do this when a PR to the master branch is closed (and the PR is marked as “merged”).
+
+name: PRs to master
+on: 
+  pull_request:
+    branches: [master]
+    types: [closed]
+jobs:
+  merge-master-back-to-dev:
+    if: github.event.pull_request.merged == true
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Git config
+      run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+    - name: Merge master back to dev
+      run: |
+          git fetch --unshallow
+          git checkout dev
+          git pull
+          git merge --no-ff master -m "Auto-merge master back to dev"
+          git push
