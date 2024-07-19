@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_CREDENTIALS_ID = 'your-git-credentials-id'
+        REPO_URL = 'https://github.com/your-username/your-repository.git'
+        DEV_BRANCH = 'dev'
+        MASTER_BRANCH = 'master'
+    }
+
+    stages {
+        stage('Checkout DEV Branch') {
+            steps {
+                git branch: "${DEV_BRANCH}",
+                    credentialsId: "${GIT_CREDENTIALS_ID}",
+                    url: "${REPO_URL}"
+            }
+        }
+
+        stage('Merge to MASTER Branch') {
+            steps {
+                script {
+                    sh 'git checkout master'
+                    sh 'git merge dev'
+                }
+            }
+        }
+
+        stage('Push to MASTER') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${REPO_URL} master'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
