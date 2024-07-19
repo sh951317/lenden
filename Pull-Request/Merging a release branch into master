@@ -1,0 +1,19 @@
+Thus, if the source branch is main and the destination branch is release, the steps would be:
+
+
+git checkout -b release -t origin/release
+git merge origin/main
+git push origin release
+
+-------------------------------------------------
+
+If the source branch is release and the destination branch is main, then the commands would be:
+
+git checkout -b main -t origin/main
+git merge origin/release
+git push origin main
+
+-------------------------------------------------
+In order for the git plugin to best approximate the first command, git checkout -b destination-branch -t origin/destination-branch, you need to add the “checkout to specific local branch” option to the checkout step in Pipeline. If you don’t add that option, git will co
+
+-------------------------------------------------
