@@ -1,0 +1,42 @@
+The issue in your Git pipeline occurs when pushing changes to the remote repository, specifically with the error: `fatal: could not read Username for 'https://github.axa.com': No such device or address`.
+
+Here are some steps you can take to troubleshoot and resolve this issue:
+
+1. **Check Git Remote URL**: Verify that the remote URL is correctly configured.
+    ```sh
+    git remote -v
+    ```
+
+2. **Credential Configuration**:
+    - Make sure your Git credentials (username and password/token) are correctly set up. You can update the credentials using the following command:
+    ```sh
+    git remote set-url origin https://<username>:<token>@github.axa.com/<repository>
+    ```
+    Replace `<username>`, `<token>`, and `<repository>` with your GitHub username, personal access token, and repository name respectively.
+
+3. **Credential Cache**:
+    - Cache your Git credentials to avoid repeated prompts.
+    ```sh
+    git config --global credential.helper cache
+    ```
+
+4. **Use SSH Instead of HTTPS**:
+    - If possible, switch to using SSH instead of HTTPS. First, add your SSH key to GitHub, then change the remote URL to use SSH:
+    ```sh
+    git remote set-url origin git@github.axa.com:<repository>.git
+    ```
+
+5. **Git Configuration Check**:
+    - Ensure your global Git configurations are correctly set up, especially the username and email.
+    ```sh
+    git config --global user.name "your_username"
+    git config --global user.email "your_email@domain.com"
+    ```
+
+6. **Access Token**:
+    - If you're using a personal access token, make sure it's still valid and has the necessary permissions to push to the repository.
+
+7. **Network Issues**:
+    - Check for any network-related issues that might be preventing access to the remote repository.
+
+By following these steps, you should be able to resolve the issue and successfully push your changes to the master branch. If the problem persists, please provide more details about the specific commands and configurations you're using.
