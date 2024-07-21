@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_TOKEN = credentials('github-token')  // Add your GitHub token as a Jenkins credential
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                script {
+                    // Checkout the code from the dev branch
+                    git branch: 'dev', url: 'https://github.com/your-repo/your-project.git'
+                }
+            }
+        }
+        stage('Create Pull Request') {
+            steps {
+                script {
+                    // Configure Git user
+                    sh 'git config user.name "jenkins-bot"'
+                    sh 'git config user.email "jenkins-bot@example.com"'
+
+                    // Create a pull request
+                    sh 'gh pr create --title "Merge dev to master" --body "Automated PR to merge dev to master" --base master --head dev --repo your-repo/your-project'
+                }
+            }
+        }
+        stage('Merge Pull Request') {
+            steps {
+                script {
+                    // Merge the pull request
+                    sh '''
+                    PR_NUMBER=$(gh pr list --base master --head dev --json number --jq ".[0].number")
+                    if [ -z "$PR_NUMBER" ]; then
+                        echo "No pull request found to merge."
+                        exit 1
+                    fi
+                    gh pr merge $PR_NUMBER --merge --repo your-repo/your-project
+                    '''
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()  // Clean up workspace after build
+        }
+    }
+}
