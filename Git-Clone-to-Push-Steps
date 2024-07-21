@@ -1,0 +1,10 @@
+git clone https://github.com/iam-veeramalla/Azure-zero-to-hero.git
+git init
+git init -b dev
+git add .
+git branch -M dev
+git commit -m "First commit"
+git remote add origin https://github.com/sh951317/azure.git
+git remote -v
+git branch -M master
+git push -u origin master
