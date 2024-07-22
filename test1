@@ -21,3 +21,15 @@ jobs:
           git pull
           git merge --no-ff master -m "Auto-merge master back to dev"
           git push
+
+
+
+
+
+[18/07, 6:42 am] Classes: https://stackoverflow.com/questions/35445186/can-github-automatically-merge-branches
+[18/07, 6:44 am] Classes: https://www.nickyt.co/blog/automate-and-merge-pull-requests-using-github-actions-and-the-github-cli-4lo6/
+[18/07, 7:02 am] Classes: https://github.com/marketplace/actions/action-automerge
+[18/07, 7:07 am] Classes: https://medium.com/@karlstad/create-a-github-actions-workflow-that-auto-merges-the-master-back-to-dev-branch-8b1ebe7009b3
+[18/07, 10:25 pm] Classes: https://www.iditect.com/program-example/is-it-possible-to-git-merge--push-using-jenkins-pipeline.html
+[18/07, 10:29 pm] Classes: AUTO MERGE TWO BRANCHES USING JENKINS
+https://www.linkedin.com/pulse/integrating-git-github-docker-jenkins-pallabi-roy?utm_source=share&utm_medium=member_android&utm_campaign=share_via
