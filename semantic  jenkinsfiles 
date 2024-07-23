@@ -1,0 +1,55 @@
+Here is an example of a Jenkins pipeline code that updates the semantic version in a repository:
+```
+pipeline {
+    agent any
+    stages {
+        stage('Update Version') {
+            steps {
+                // Update version using semver command
+                sh 'semver next'
+                // Get the new version number
+                def newVersion = sh(returnStdout: true, script: 'semver next').trim()
+                // Update the version in the repository
+                git {
+                    remote {
+                        name: 'origin'
+                        url: '(link unavailable)<your-repo-url>.git'
+                    }
+                    config {
+                        branch: 'main'
+                        merge: true
+                    }
+                    merge(newVersion)
+                }
+                // Tag the new version
+                git {
+                    remote {
+                        name: 'origin'
+                        url: '(link unavailable)<your-repo-url>.git'
+                    }
+                    config {
+                        branch: 'main'
+                        push: true
+                    }
+                    tag("v${newVersion}")
+                }
+            }
+        }
+    }
+}
+```
+This pipeline code uses the `semver` command to update the version, commits the changes, and tags the new version.
+
+Note: You need to replace `<your-repo-url>` with your actual repository URL.
+
+Also, you can use `sh` step to run the `semver` command and update the version in a specific file, for example:
+```
+sh 'semver next > version.txt'
+```
+This will update the version in a file named `version.txt`.
+
+You can also use `readFile` step to read the version from a file, for example:
+```
+def newVersion = readFile('version.txt')
+```
+This will read the version from the `version.txt` file.
