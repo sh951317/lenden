@@ -1,0 +1,69 @@
+pipeline {
+    agent any	
+        tools {
+        maven "mvn-3.6.3"
+        }
+    environment {
+        PROXY_HOST = 'cicd-external'
+        PROXY_PORT = '8080'
+        COMMIT_ID = "${env.GIT_COMMIT}"
+        Branch_NAME = "${GIT_BRANCH.split("/")[1]}"
+   		}	
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {                    
+		    cleanWs();               
+		    git branch: 'prod', credentialsId: 'PAT_Jenkins', url: 'https://github.axa.com/shubham-sharma-ext/test.git'
+		    }
+		}
+	   }
+
+        stage('Checkout K8S manifest SCM'){
+            steps {
+                git credentialsId: 'PAT_Jenkins', 
+                url: 'https://github.axa.com/shubham-sharma-ext/test.git',
+                branch: 'prod'
+            }
+        }
+
+		stage('Cros-Check') {
+            steps { 
+                script {
+
+		sh """
+		    git remote -v
+		    git remote set-url origin https://shubham-sharma-ext:(github-token-password)@github.axa.com/test  // enter the github password 
+		    git config --global credential.helper cache		
+		    git branch --set-upstream-to origin/master
+		    git remote set-url origin https://github.axa.com/shubham-sharma-ext/test.git
+		    git config --global user.name "shubham-sharma-ext"
+		    git config --global user.email "shubham.sharma.ext@axa.com"
+
+		    """		    
+		   }
+	       }
+	  } 
+	
+
+	 stage('Git-Clone') {
+            steps { 
+                script {
+			withCredentials([usernamePassword(credentialsId: 'PAT_Jenkins', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+		
+		sh """
+		    git add .
+		    git branch -M prod
+		  
+		    
+		    git branch -u origin/prod
+		    git merge origin/master
+		    git push https://github.axa.com/shubham-sharma-ext/test.git HEAD:master
+		    """
+}		    
+		   }
+	       }
+	  }   
+     }
+}
