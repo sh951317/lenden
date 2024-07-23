@@ -1,0 +1,6 @@
+# pyproject.toml
+[tool.poetry]
+name = "your_package"
+version = "1.0.0"
+description = "Your project description"
+authors = ["Your Name <your.email@example.com>"]
