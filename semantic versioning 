@@ -1,0 +1,147 @@
+pipeline {
+    agent any
+
+    environment {
+        VERSION_FILE = 'VERSION'
+        VERSION_REGEX = '^([0-9]+)\\.([0-9]+)\\.([0-9]+)$'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    cleanWs()
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Read Version') {
+            steps {
+                script {
+                    def version = readFile(env.VERSION_FILE).trim()
+                    def matcher = version =~ env.VERSION_REGEX
+                    if (!matcher.matches()) {
+                        error "Version file does not match the expected format: ${version}"
+                    }
+                    currentBuild.displayName = "Build ${version}"
+                }
+            }
+        }
+
+        stage('Bump Version') {
+            steps {
+                script {
+                    def version = readFile(env.VERSION_FILE).trim()
+                    def matcher = version =~ env.VERSION_REGEX
+                    def (major, minor, patch) = [matcher[0][1].toInteger(), matcher[0][2].toInteger(), matcher[0][3].toInteger()]
+
+                    def commitMessage = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    if (commitMessage.contains('[major]')) {
+                        major++
+                        minor = 0
+                        patch = 0
+                    } else if (commitMessage.contains('[minor]')) {
+                        minor++
+                        patch = 0
+                    } else if (commitMessage.contains('[patch]')) {
+                        patch++
+                    }
+
+                    def newVersion = "${major}.${minor}.${patch}"
+                    writeFile file: env.VERSION_FILE, text: newVersion
+                    sh "git add ${env.VERSION_FILE}"
+                    sh "git commit -m 'Bump version to ${newVersion}'"
+                    sh "git push origin ${env.Branch_NAME}"
+
+                    currentBuild.displayName = "Build ${newVersion}"
+                }
+            }
+        }
+
+        // Add other stages as needed
+    }
+}
+
+
+
+
+
+
+-------------------------------------------------
+
+
+pipeline {
+    agent any
+
+    environment {
+        VERSION_FILE = 'VERSION'
+        VERSION_REGEX = '^([0-9]+)\\.([0-9]+)\\.([0-9]+)$'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Read Version') {
+            steps {
+                script {
+                    def version = readFile(env.VERSION_FILE).trim()
+                    echo "Current Version: ${version}"
+
+                    if (!version.matches(env.VERSION_REGEX)) {
+                        error("Version file does not match the expected format")
+                    }
+
+                    def matcher = version =~ env.VERSION_REGEX
+                    env.MAJOR = matcher[0][1].toInteger()
+                    env.MINOR = matcher[0][2].toInteger()
+                    env.PATCH = matcher[0][3].toInteger()
+                }
+            }
+        }
+
+        stage('Increment Version') {
+            steps {
+                script {
+                    def changeType = sh(
+                        script: 'git log -1 --pretty=%B',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Commit Message: ${changeType}"
+
+                    if (changeType.contains('BREAKING CHANGE')) {
+                        env.MAJOR += 1
+                        env.MINOR = 0
+                        env.PATCH = 0
+                    } else if (changeType.contains('feat')) {
+                        env.MINOR += 1
+                        env.PATCH = 0
+                    } else {
+                        env.PATCH += 1
+                    }
+
+                    def newVersion = "${env.MAJOR}.${env.MINOR}.${env.PATCH}"
+                    echo "New Version: ${newVersion}"
+                    writeFile file: env.VERSION_FILE, text: newVersion
+                }
+            }
+        }
+
+        stage('Commit Version') {
+            steps {
+                script {
+                    sh 'git config user.email "ci@example.com"'
+                    sh 'git config user.name "CI Server"'
+                    sh "git add ${env.VERSION_FILE}"
+                    sh "git commit -m 'Bump version to ${env.MAJOR}.${env.MINOR}.${env.PATCH}'"
+                    sh 'git push'
+                }
+            }
+        }
+    }
+}
