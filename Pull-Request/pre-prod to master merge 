@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Merge Branches') {
+            steps {
+                script {
+                    try {
+                        sh 'git checkout pre-prod'
+                        sh 'git pull origin pre-prod'
+                        sh 'git merge origin/master'
+                    } catch (Exception e) {
+                        echo "Merge conflict detected. Please resolve conflicts manually."
+                        currentBuild.result = 'FAILURE'
+                        error('Merge conflict detected')
+                    }
+                }
+            }
+        }
+        stage('Resolve Conflicts') {
+            steps {
+                script {
+                    // Script or manual steps to resolve conflicts
+                    // This may include calling out to a shell script or performing manual resolution
+                    echo "Please resolve conflicts manually if this stage is reached."
+                }
+            }
+        }
+        stage('Build and Test') {
+            steps {
+                // Add your build and test steps here
+                echo 'Building and testing...'
+            }
+        }
+    }
+}
