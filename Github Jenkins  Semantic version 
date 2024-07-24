@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout code
+                checkout scm
+            }
+        }
+        stage('Set Version') {
+            steps {
+                script {
+                    // Retrieve the latest tag
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    
+                    // Generate the next version number based on commit messages
+                    def nextVersion = getNextVersion(latestTag)
+                    
+                    // Set the environment variable
+                    env.VERSION = nextVersion
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                // Build the project
+                sh 'echo Building version ${VERSION}'
+            }
+        }
+        stage('Tag') {
+            steps {
+                script {
+                    // Tag the new version
+                    sh "git tag -a ${VERSION} -m 'Release ${VERSION}'"
+                    sh "git push origin ${VERSION}"
+                }
+            }
+        }
+    }
+}
+
+// Helper function to determine the next version number
+def getNextVersion(latestTag) {
+    // Implement logic to determine the next version based on the latest tag and commit messages
+    // For simplicity, this example just increments the patch number
+    def versionParts = latestTag.tokenize('.')
+    def patch = versionParts[-1].toInteger() + 1
+    return "${versionParts[0]}.${versionParts[1]}.${patch}"
+}
