@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_CREDENTIALS_ID = 'your-git-credentials-id' // Jenkins credential ID for GitHub
+        GITHUB_REPO = 'https://github.com/your-user/your-repo.git' // GitHub repository URL
+        SEMVER_PREFIX = 'v' // Optional: Prefix for version tags
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Determine Version') {
+            steps {
+                script {
+                    // Fetch the latest tags
+                    sh 'git fetch --tags'
+                    
+                    // Get the latest tag
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    echo "Latest Tag: ${latestTag}"
+                    
+                    // Calculate the next version number
+                    def nextVersion = calculateNextVersion(latestTag)
+                    echo "Next Version: ${nextVersion}"
+                    
+                    // Set the next version as an environment variable
+                    env.NEXT_VERSION = nextVersion
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                // Placeholder for build steps
+                echo "Building version ${env.NEXT_VERSION}"
+            }
+        }
+        stage('Tag and Push') {
+            steps {
+                script {
+                    // Tag the new version
+                    sh "git tag -a ${env.SEMVER_PREFIX}${env.NEXT_VERSION} -m 'Release ${env.SEMVER_PREFIX}${env.NEXT_VERSION}'"
+                    
+                    // Push the tag to the repository
+                    sshagent(credentials: [env.GIT_CREDENTIALS_ID]) {
+                        sh "git push origin ${env.SEMVER_PREFIX}${env.NEXT_VERSION}"
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Helper function to calculate the next version number
+def calculateNextVersion(String latestTag) {
+    def parts = latestTag.replace(env.SEMVER_PREFIX, '').split('\\.')
+    def major = parts[0].toInteger()
+    def minor = parts[1].toInteger()
+    def patch = parts[2].toInteger()
+    
+    // For simplicity, incrementing the patch version
+    patch += 1
+    
+    return "${major}.${minor}.${patch}"
+}
