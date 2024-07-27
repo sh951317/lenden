@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables if necessary
+        BRANCH_NAME = ''  // This will hold the branch name
+        BASE_IMAGE = ''   // This will hold the base image details
+        NEW_VERSION = ''  // This will hold the new version
+    }
+
+    stages {
+        stage('Get Branch Name') {
+            steps {
+                script {
+                    BRANCH_NAME = env.BRANCH_NAME
+                    echo "Branch Name: ${BRANCH_NAME}"
+                }
+            }
+        }
+
+        stage('Check Base Image') {
+            steps {
+                script {
+                    // Assuming we are using OpenShift CLI
+                    BASE_IMAGE = sh(script: "oc get is <image-stream-name> -o jsonpath='{.status.tags[?(@.tag==\"latest\")].items[0].image}'", returnStdout: true).trim()
+                    echo "Base Image: ${BASE_IMAGE}"
+                }
+            }
+        }
+
+        stage('Update Image Version') {
+            steps {
+                script {
+                    // Logic to determine the new version based on semantic versioning
+                    // This could involve parsing the branch name, current version, etc.
+                    NEW_VERSION = '1.0.0' // Placeholder for new version logic
+                    echo "New Image Version: ${NEW_VERSION}"
+                }
+            }
+        }
+
+        stage('Update values.yaml') {
+            steps {
+                script {
+                    // Update the values.yaml file with the new image version
+                    sh """
+                    sed -i 's/tag: .*/tag: ${NEW_VERSION}/' path/to/values.yaml
+                    """
+                    echo "Updated values.yaml with new version: ${NEW_VERSION}"
+                }
+            }
+        }
+
+        stage('Commit and Push Changes') {
+            steps {
+                script {
+                    sh """
+                    git add path/to/values.yaml
+                    git commit -m "Update image version to ${NEW_VERSION}"
+                    git push origin ${BRANCH_NAME}
+                    """
+                    echo "Committed and pushed changes"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully'
+        }
+        failure {
+            echo 'Pipeline execution failed'
+        }
+    }
+}
