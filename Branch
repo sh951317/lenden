@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_CREDENTIALS_ID = 'your-credentials-id' // Replace with your Jenkins credentials ID
+    }
+
+    stages {
+        stage('Check Branch and Merge') {
+            when {
+                expression {
+                    return env.BRANCH_NAME.startsWith('DM')
+                }
+            }
+            steps {
+                script {
+                    echo "Branch name starts with DM, proceeding to merge into the development branch."
+                    
+                    // Checkout the development branch
+                    sh 'git checkout development'
+                    
+                    // Merge the changes from the DM branch
+                    sh "git merge origin/${env.BRANCH_NAME}"
+                    
+                    // Handle potential merge conflicts here if necessary
+                    // You might need to handle or log conflicts before pushing changes
+                    
+                    // Push the merged changes back to the development branch
+                    withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh 'git push origin development'
+                    }
+                }
+            }
+        }
+    }
+}
