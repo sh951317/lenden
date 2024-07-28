@@ -1,0 +1,65 @@
+To create a Jenkins pipeline that automatically creates a pull request and merges changes from a branch whose name starts with "DM" into a "development" branch, you'll need to use GitHub's API or a plugin like the GitHub Pull Request Builder or the GitHub Branch Source Plugin. Below is an example using the GitHub API via a scripted Jenkins pipeline with a shell script to create and merge the pull request.
+
+### Prerequisites:
+1. **GitHub Personal Access Token**: This token should have permissions to create and merge pull requests.
+2. **Jenkins Credentials**: Store the GitHub token in Jenkins credentials securely.
+3. **GitHub API Usage**: You need to use GitHub's API to create and merge pull requests.
+
+Here's an example Jenkins pipeline script:
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_TOKEN = credentials('github-token-id') // Jenkins credential ID containing GitHub token
+        GITHUB_USER = 'your-github-username'
+        REPO_OWNER = 'repo-owner' // Replace with the repository owner's name or organization
+        REPO_NAME = 'repository-name' // Replace with the repository name
+    }
+
+    stages {
+        stage('Check Branch and Create PR') {
+            when {
+                expression {
+                    return env.BRANCH_NAME.startsWith('DM')
+                }
+            }
+            steps {
+                script {
+                    def pullRequestTitle = "Merge ${env.BRANCH_NAME} into development"
+                    def pullRequestBody = "Automated pull request to merge changes from ${env.BRANCH_NAME} into the development branch."
+                    def apiUrl = "https://api.github.com/repos/${env.REPO_OWNER}/${env.REPO_NAME}/pulls"
+
+                    // Create a pull request using GitHub API
+                    sh """
+                        curl -X POST -H "Authorization: token ${env.GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
+                        ${apiUrl} -d '{ 
+                            "title": "${pullRequestTitle}",
+                            "body": "${pullRequestBody}",
+                            "head": "${env.BRANCH_NAME}",
+                            "base": "development"
+                        }'
+                    """
+                }
+            }
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Environment Variables**:
+   - `GITHUB_TOKEN`: This is your GitHub personal access token stored securely in Jenkins.
+   - `GITHUB_USER`: Your GitHub username.
+   - `REPO_OWNER` and `REPO_NAME`: The owner and name of the GitHub repository.
+
+2. **Stage `Check Branch and Create PR`**:
+   - The `when` block checks if the branch name starts with "DM".
+   - The `sh` step uses the GitHub API to create a pull request.
+
+### Additional Steps:
+- **Merge the Pull Request**: After the pull request is created, you can either manually review and merge it or automate the merge process. To automate, you might need an additional step that checks for the pull request's status and merges it using the GitHub API or a plugin that supports this feature.
+- **Security**: Ensure your GitHub token has the necessary permissions and is securely stored in Jenkins.
+- **Error Handling**: Add error handling to manage cases where the pull request creation fails or if there are conflicts
