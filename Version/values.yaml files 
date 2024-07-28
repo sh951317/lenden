@@ -1,0 +1,51 @@
+To create a `values.yaml` file that matches the requirements, you can start with a basic structure and update the `tag` field with the new version number using the Jenkins pipeline script you provided.
+
+Here's a template for a `values.yaml` file that includes an image section with a `tag` field. This template assumes that you're using Helm or a similar deployment tool that utilizes a `values.yaml` file:
+
+```yaml
+# values.yaml
+
+# This is a sample values.yaml file that contains settings for an image.
+# The tag field will be updated by the Jenkins pipeline.
+
+image:
+  repository: your-docker-repository/image-name
+  tag: "1.0.0"  # Default tag, will be updated by the pipeline
+  pullPolicy: IfNotPresent
+```
+
+### Explanation:
+
+- **image**: This section typically contains details about the Docker image that the application should use.
+  - **repository**: The name of the Docker repository where the image is stored.
+  - **tag**: The version tag of the image, which will be updated by the pipeline.
+  - **pullPolicy**: This specifies when the container runtime should pull the image from the registry. `IfNotPresent` means it will use a local image if available.
+
+### Updating the values.yaml File with Jenkins
+
+Your Jenkins pipeline script snippet will update the `tag` field in the `values.yaml` file with the new version number (`NEW_VERSION`):
+
+```groovy
+sh """
+sed -i 's/tag: .*/tag: ${NEW_VERSION}/' path/to/values.yaml
+"""
+echo "Updated values.yaml with new version: ${NEW_VERSION}"
+```
+
+### Steps to Implement:
+
+1. **Create the values.yaml file**: Use the above template as a starting point.
+2. **Store the values.yaml file in your source code repository**: Ensure the file is under version control so that updates can be tracked and managed.
+3. **Set the path correctly in Jenkinsfile**: Make sure the path specified in your `sed` command (`path/to/values.yaml`) matches the actual location of your `values.yaml` file in the repository.
+
+#### Example:
+
+If your `values.yaml` is located in the root directory of your repository, the path in the `sed` command would be:
+
+```groovy
+sh """
+sed -i 's/tag: .*/tag: ${NEW_VERSION}/' values.yaml
+"""
+```
+
+Ensure that your Jenkins job has the necessary permissions and environment setup to perform these operations, including Git commit and push if the values.yaml file is under version control.
