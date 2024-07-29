@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout and Print Branch Name') {
+            steps {
+                script {
+                    // Perform checkout and capture SCM information
+                    def scmVars = checkout scm
+
+                    // Capture the branch name from SCM variables
+                    def branchName = scmVars.GIT_BRANCH
+                    echo "Branch Name: ${branchName}"
+                }
+            }
+        }
+    }
+}
