@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        SOURCE_BRANCH = "source-branch-name"  // Replace with your source branch name
+        TARGET_BRANCH = "target-branch-name"  // Replace with your target branch name
+    }
+
+    stages {
+        stage('Check Branch Conditions') {
+            steps {
+                script {
+                    // Get the source and target branches from the environment variables or any other method
+                    def sourceBranch = env.BRANCH_NAME // Assume BRANCH_NAME is the source branch name
+                    def targetBranch = env.CHANGE_TARGET // Assume CHANGE_TARGET is the target branch name in case of a PR
+
+                    // Check if the source branch matches
+                    if (sourceBranch != SOURCE_BRANCH) {
+                        error "Build triggered from ${sourceBranch} instead of ${SOURCE_BRANCH}. Aborting."
+                    }
+
+                    // Check if the target branch matches
+                    if (targetBranch != TARGET_BRANCH) {
+                        error "PR target branch is ${targetBranch} instead of ${TARGET_BRANCH}. Aborting."
+                    }
+
+                    echo "Branch conditions met. Proceeding with the build."
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building...'
+                // Add your build steps here
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing...'
+                // Add your test steps here
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying...'
+                // Add your deploy steps here
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            // Add any cleanup steps here
+        }
+
+        success {
+            echo 'Build succeeded!'
+        }
+
+        failure {
+            echo 'Build failed!'
+        }
+    }
+}
