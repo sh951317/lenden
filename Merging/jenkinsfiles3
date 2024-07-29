@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    environment {
+        DEPLOYMENT_BRANCH = 'deployment' // Your deployment branch name
+        PRE_PROD_BRANCH = 'pre-prod'     // Your pre-prod branch name
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the deployment branch
+                git branch: "${DEPLOYMENT_BRANCH}", url: 'https://your-repo-url.git'
+            }
+        }
+        stage('Build and Deploy') {
+            when {
+                branch DEPLOYMENT_BRANCH
+            }
+            steps {
+                // Your build and deployment steps
+                echo 'Building and deploying the application from the deployment branch...'
+                // Example: sh 'deploy_script.sh'
+            }
+        }
+        stage('Merge to Pre-Prod') {
+            steps {
+                script {
+                    // Configure Git with your credentials
+                    sh 'git config user.email "your-email@example.com"'
+                    sh 'git config user.name "Your Name"'
+                    
+                    // Checkout the pre-prod branch
+                    sh "git checkout ${PRE_PROD_BRANCH}"
+                    
+                    // Merge the deployment branch into the pre-prod branch
+                    sh "git merge ${DEPLOYMENT_BRANCH}"
+                    
+                    // Push the changes to the pre-prod branch
+                    withCredentials([usernamePassword(credentialsId: 'your-credentials-id', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@your-repo-url.git ${PRE_PROD_BRANCH}'
+                    }
+                }
+            }
+        }
+    }
+}
