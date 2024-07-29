@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    environment {
+        MASTER_BRANCH = 'master' // The master branch name
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the current branch
+                checkout scm
+            }
+        }
+        stage('Validate Branch') {
+            steps {
+                script {
+                    def branchName = env.GIT_BRANCH ?: env.BRANCH_NAME
+                    if (branchName.startsWith('development')) {
+                        echo "Branch name ${branchName} is valid for merging."
+                    } else {
+                        echo "Branch name ${branchName} does not start with 'development'. No action will be performed."
+                        currentBuild.result = 'NOT_BUILT'
+                        error("Branch name does not start with 'development'. Skipping further stages.")
+                    }
+                }
+            }
+        }
+        stage('Merge to Master') {
+            steps {
+                script {
+                    // Configure Git with your credentials
+                    sh 'git config user.email "your-email@example.com"'
+                    sh 'git config user.name "Your Name"'
+                    
+                    // Checkout the master branch
+                    sh "git checkout ${MASTER_BRANCH}"
+                    
+                    // Merge the current branch (assumed to be development branch) into the master branch
+                    sh "git merge --no-ff ${env.GIT_BRANCH}"
+                    
+                    // Push the changes to the master branch
+                    withCredentials([usernamePassword(credentialsId: 'your-credentials-id', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@your-repo-url.git ${MASTER_BRANCH}'
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline execution complete.'
+        }
+        success {
+            echo 'Merge to master branch successful.'
+        }
+        failure {
+            echo 'Merge to master branch failed.'
+        }
+    }
+}
