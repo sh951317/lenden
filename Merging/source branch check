@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    environment {
+        SOURCE_BRANCH = '' // Placeholder for the source branch
+        DESTINATION_BRANCH = 'master' // The master branch as the destination
+    }
+    stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    // Determine the source branch from the SCM
+                    env.SOURCE_BRANCH = env.GIT_BRANCH ?: env.BRANCH_NAME
+                    echo "Source Branch: ${env.SOURCE_BRANCH}"
+                }
+            }
+        }
+        stage('Validate Branches') {
+            steps {
+                script {
+                    // Ensure the source branch starts with "development" and the destination is "master"
+                    if (env.SOURCE_BRANCH.startsWith('development') && env.DESTINATION_BRANCH == 'master') {
+                        echo "Valid branches: Source - ${env.SOURCE_BRANCH}, Destination - ${env.DESTINATION_BRANCH}"
+                    } else {
+                        echo "Invalid branches: Source - ${env.SOURCE_BRANCH}, Destination - ${env.DESTINATION_BRANCH}"
+                        currentBuild.result = 'NOT_BUILT'
+                        error("Branch validation failed. Skipping further stages.")
+                    }
+                }
+            }
+        }
+        stage('Merge to Master') {
+            steps {
+                script {
+                    // Configure Git with your credentials
+                    sh 'git config user.email "your-email@example.com"'
+                    sh 'git config user.name "Your Name"'
+                    
+                    // Checkout the master branch
+                    sh "git checkout ${DESTINATION_BRANCH}"
+                    
+                    // Merge the source branch into the master branch
+                    sh "git merge --no-ff ${SOURCE_BRANCH}"
+                    
+                    // Push the changes to the master branch
+                    withCredentials([usernamePassword(credentialsId: 'your-credentials-id', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@your-repo-url.git ${DESTINATION_BRANCH}'
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline execution complete.'
+        }
+        success {
+            echo 'Merge to master branch successful.'
+        }
+        failure {
+            echo 'Merge to master branch failed.'
+        }
+    }
+}
