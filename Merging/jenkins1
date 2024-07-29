@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/your-org/your-repo.git'
+        CREDENTIALS_ID = 'your-credentials-id'  // ID of Jenkins credentials for GitHub
+        BRANCH_PATTERN = '^DM.*'  // Regex pattern to match branches starting with "DM"
+        TARGET_BRANCH = 'development'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Check out the specific DM branch triggered
+                    git url: "${env.REPO_URL}", credentialsId: "${env.CREDENTIALS_ID}"
+                }
+            }
+        }
+        stage('Merge DM Branch into Development') {
+            steps {
+                script {
+                    def branchName = env.GIT_BRANCH
+
+                    if (branchName ==~ BRANCH_PATTERN) {
+                        sh """
+                        git checkout ${TARGET_BRANCH}
+                        git merge --no-ff ${branchName} -m "Merging ${branchName} into ${TARGET_BRANCH}"
+                        git push origin ${TARGET_BRANCH}
+                        """
+                    } else {
+                        echo "Branch ${branchName} does not match pattern ${BRANCH_PATTERN}. Skipping merge."
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'The merge process failed. Check the logs for more details.'
+        }
+    }
+}
