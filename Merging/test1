@@ -1,0 +1,16 @@
+pipeline {
+    agent any
+    stages {
+        stage('Print Environment Variables') {
+            steps {
+                script {
+                    // Print the branch name
+                    echo "Branch Name: ${env.BRANCH_NAME}"
+
+                    // Print the change ID (useful for pull requests)
+                    echo "Change ID: ${env.CHANGE_ID}"
+                }
+            }
+        }
+    }
+}
