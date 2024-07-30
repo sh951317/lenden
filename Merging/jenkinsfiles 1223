@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'your-repository-url'  // Replace with your repository URL
+    }
+
+    stages {
+        stage('Checkout Source Branch') {
+            steps {
+                script {
+                    // Check out the code from the source branch
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/dm']],
+                        userRemoteConfigs: [[url: REPO_URL]]
+                    ])
+                }
+            }
+        }
+
+        stage('Merge to Destination Branch') {
+            when {
+                expression {
+                    return env.SOURCE_BRANCH == 'dm' && env.DESTINATION_BRANCH == 'development'
+                }
+            }
+            steps {
+                script {
+                    echo "Merging ${env.SOURCE_BRANCH} into ${env.DESTINATION_BRANCH}"
+
+                    // Add remote if not present
+                    sh "git remote set-url origin ${REPO_URL} || git remote add origin ${REPO_URL}"
+
+                    // Fetch the latest changes from the destination branch
+                    sh "git fetch origin ${env.DESTINATION_BRANCH}"
+
+                    // Checkout the destination branch
+                    sh "git checkout ${env.DESTINATION_BRANCH}"
+
+                    // Merge source branch into destination branch
+                    sh "git merge dm --no-ff -m 'Merged dm into development'"
+
+                    // Push the merged changes to the remote repository
+                    sh "git push origin ${env.DESTINATION_BRANCH}"
+                }
+            }
+        }
+    }
+}
