@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        SOURCE_BRANCH = "dm"
+        DESTINATION_BRANCH = "development"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Check out the code from the source branch
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${SOURCE_BRANCH}"]],
+                        userRemoteConfigs: [[url: 'your-repository-url']]
+                    ])
+                }
+            }
+        }
+
+        stage('Merge') {
+            steps {
+                script {
+                    // Check if the current branch is the source branch
+                    def currentBranch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    if (currentBranch == SOURCE_BRANCH) {
+                        echo "Merging ${SOURCE_BRANCH} into ${DESTINATION_BRANCH}"
+
+                        // Add remote if not present
+                        sh 'git remote set-url origin your-repository-url || git remote add origin your-repository-url'
+
+                        // Fetch latest changes from the destination branch
+                        sh "git fetch origin ${DESTINATION_BRANCH}"
+
+                        // Checkout the destination branch
+                        sh "git checkout ${DESTINATION_BRANCH}"
+
+                        // Merge source branch into destination branch
+                        sh "git merge ${SOURCE_BRANCH} --no-ff -m 'Merged ${SOURCE_BRANCH} into ${DESTINATION_BRANCH}'"
+
+                        // Push the merged changes to the remote repository
+                        sh "git push origin ${DESTINATION_BRANCH}"
+                    } else {
+                        echo "Not on ${SOURCE_BRANCH}, current branch is ${currentBranch}. Skipping merge."
+                    }
+                }
+            }
+        }
+    }
+}
