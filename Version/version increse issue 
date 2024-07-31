@@ -1,0 +1,14 @@
+stage('Increment Version') {
+    steps {
+        script {
+            // Increment the version (patch in this example)
+            def parts = env.CURRENT_VERSION.tokenize('.')
+            def newVersion = "${parts[0]}.${parts[1]}.${parts[2].toInteger() + 1}"
+            echo "New version: ${newVersion}"
+
+            // Write the new version back to the file
+            writeFile(file: 'version.txt', text: newVersion)
+            env.NEW_VERSION = newVersion
+        }
+    }
+}
