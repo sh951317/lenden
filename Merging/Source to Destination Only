@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/your-username/your-repo.git' // Replace with your repository URL
+        CREDENTIALS_ID = 'your-credentials-id' // Replace with your Jenkins credentials ID
+    }
+
+    stages {
+        stage('Checkout Source Branch') {
+            steps {
+                script {
+                    echo "Checking out source branch: DM"
+                    // Checkout the DM branch
+                    checkout([$class: 'GitSCM', branches: [[name: '*/DM']],
+                              userRemoteConfigs: [[url: REPO_URL, credentialsId: CREDENTIALS_ID]]])
+                }
+            }
+        }
+
+        stage('Merge DM into Development') {
+            when {
+                allOf {
+                    expression { return params.SOURCE_BRANCH == 'DM' }
+                    expression { return params.DESTINATION_BRANCH == 'development' }
+                }
+            }
+            steps {
+                script {
+                    echo "Merging DM into development"
+                    // Fetch the latest changes from the development branch
+                    sh "git fetch origin development"
+                    // Checkout the development branch
+                    sh "git checkout development"
+                    // Merge the DM branch into the development branch
+                    sh "git merge DM --no-ff -m 'Merged DM into development'"
+                }
+            }
+        }
+
+        stage('Push Merged Code') {
+            when {
+                allOf {
+                    expression { return params.SOURCE_BRANCH == 'DM' }
+                    expression { return params.DESTINATION_BRANCH == 'development' }
+                }
+            }
+            steps {
+                script {
+                    echo "Pushing changes to the development branch"
+                    // Push the changes back to the remote repository
+                    sh "git push origin development"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Merge and push successful!'
+        }
+        failure {
+            echo 'Merge or push failed. Check logs for details.'
+        }
+    }
+}
