@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+
+    environment {
+        VERSION_FILE = 'version.txt'
+        VERSION_REGEX = /^(\d+)\.(\d+)\.(\d+)$/
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your code from the source repository
+                git 'https://your-repo-url.git'
+            }
+        }
+
+        stage('Read Version') {
+            steps {
+                script {
+                    if (fileExists(env.VERSION_FILE)) {
+                        def versionContent = readFile(env.VERSION_FILE).trim()
+                        def matcher = (versionContent =~ env.VERSION_REGEX)
+                        
+                        if (matcher.matches()) {
+                            env.MAJOR_VERSION = matcher[0][1]
+                            env.MINOR_VERSION = matcher[0][2]
+                            env.PATCH_VERSION = matcher[0][3]
+                        } else {
+                            error "Version format is incorrect: ${versionContent}"
+                        }
+                    } else {
+                        // Default version if file does not exist
+                        env.MAJOR_VERSION = '0'
+                        env.MINOR_VERSION = '0'
+                        env.PATCH_VERSION = '0'
+                    }
+                }
+            }
+        }
+
+        stage('Increment Version') {
+            steps {
+                script {
+                    // Increment patch version
+                    env.PATCH_VERSION = (env.PATCH_VERSION.toInteger() + 1).toString()
+
+                    // Construct the new version string
+                    env.NEW_VERSION = "${env.MAJOR_VERSION}.${env.MINOR_VERSION}.${env.PATCH_VERSION}"
+
+                    // Write the new version back to the file
+                    writeFile file: env.VERSION_FILE, text: env.NEW_VERSION
+                    echo "New version is: ${env.NEW_VERSION}"
+                }
+            }
+        }
+
+        stage('Build and Test') {
+            steps {
+                // Your build and test steps here
+                echo "Building version ${env.NEW_VERSION}"
+            }
+        }
+
+        stage('Commit Version') {
+            steps {
+                script {
+                    // Commit the version file with the new version
+                    sh "git config user.email 'jenkins@yourcompany.com'"
+                    sh "git config user.name 'Jenkins'"
+                    sh "git add ${env.VERSION_FILE}"
+                    sh "git commit -m 'Update version to ${env.NEW_VERSION}'"
+                    sh "git push origin main" // Replace 'main' with your branch name
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            // Actions to perform after a successful build
+            echo "Build and version update successful."
+        }
+        failure {
+            // Actions to perform after a failed build
+            echo "Build failed. Version not updated."
+        }
+    }
+}
