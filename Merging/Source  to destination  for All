@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+
+    environment {
+        SOURCE_BRANCH = 'source-branch' // Replace with actual source branch name
+        DESTINATION_BRANCH = 'destination-branch' // Replace with actual destination branch name
+        GIT_CREDENTIALS_ID = 'git-credentials-id' // Replace with your Jenkins credentials ID for Git
+        GIT_REPO_URL = 'https://your-repo-url.git' // Replace with your Git repository URL
+    }
+
+    stages {
+        stage('Checkout Source Branch') {
+            steps {
+                script {
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "refs/heads/${env.SOURCE_BRANCH}"]],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [],
+                        userRemoteConfigs: [[
+                            credentialsId: env.GIT_CREDENTIALS_ID,
+                            url: env.GIT_REPO_URL
+                        ]]
+                    ])
+                }
+            }
+        }
+
+        stage('Merge to Destination Branch') {
+            steps {
+                script {
+                    def sourceBranch = env.SOURCE_BRANCH
+                    def destinationBranch = env.DESTINATION_BRANCH
+                    def mergeAllowed = false
+
+                    // Determine if merge should occur based on branch names
+                    if (sourceBranch.startsWith('DM-') || sourceBranch.startsWith('PR-')) {
+                        if (destinationBranch == 'dev') {
+                            mergeAllowed = true
+                        }
+                    } else if (sourceBranch == 'Dev') {
+                        if (destinationBranch == 'pre-prod') {
+                            mergeAllowed = true
+                        }
+                    } else if (sourceBranch == 'pre-prod') {
+                        if (destinationBranch == 'prod') {
+                            mergeAllowed = true
+                        }
+                    }
+
+                    if (mergeAllowed) {
+                        echo "Merging ${sourceBranch} into ${destinationBranch}"
+                        sh '''
+                        git checkout ${DESTINATION_BRANCH}
+                        git merge ${SOURCE_BRANCH} --no-ff -m "Merge ${SOURCE_BRANCH} into ${DESTINATION_BRANCH}"
+                        git push origin ${DESTINATION_BRANCH}
+                        '''
+                    } else {
+                        echo "Merge from ${sourceBranch} to ${destinationBranch} not allowed or required."
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                echo
