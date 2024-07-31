@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Merge Branches') {
+            steps {
+                script {
+                    // Get the source and destination branches
+                    def sourceBranch = env.BRANCH_NAME // Assuming the pipeline is triggered by a change in the source branch
+                    def destinationBranch = env.DESTINATION_BRANCH // This needs to be set as a parameter or environment variable
+
+                    // Rule 1: Merge DM- or PR- to dev
+                    if ((sourceBranch.startsWith('DM-') || sourceBranch.startsWith('PR-')) && destinationBranch == 'dev') {
+                        echo "Merging ${sourceBranch} into ${destinationBranch}"
+                        // Perform merge operation here
+                    }
+                    // Rule 2: Merge dev to pre-prod
+                    else if (sourceBranch == 'dev' && destinationBranch == 'pre-prod') {
+                        echo "Merging ${sourceBranch} into ${destinationBranch}"
+                        // Perform merge operation here
+                    }
+                    // Rule 3: Merge pre-prod to prod
+                    else if (sourceBranch == 'pre-prod' && destinationBranch == 'prod') {
+                        echo "Merging ${sourceBranch} into ${destinationBranch}"
+                        // Perform merge operation here
+                    } else {
+                        echo "No merge operation performed: Source ${sourceBranch}, Destination ${destinationBranch}"
+                    }
+                }
+            }
+        }
+    }
+}
