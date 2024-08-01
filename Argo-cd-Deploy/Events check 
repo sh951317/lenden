@@ -1,0 +1,45 @@
+To check the recent events or activity on a GitHub repository using Git, you can use the `git log` command combined with specific flags to filter the events or activities. Here's how you can do it:
+
+### Basic `git log` Command
+This command shows the commit history for the current branch:
+```sh
+git log
+```
+
+### Adding Flags for More Information
+To get more detailed information, you can add flags to the `git log` command:
+```sh
+git log --oneline --graph --decorate --all
+```
+- `--oneline`: Shows each commit on a single line.
+- `--graph`: Shows a text-based graph of the branch structure.
+- `--decorate`: Adds names of branches or tags of commits shown.
+- `--all`: Shows all branches.
+
+### Filtering by Date
+To filter the logs by a specific date range, you can use the `--since` and `--until` flags:
+```sh
+git log --since="2023-01-01" --until="2023-12-31"
+```
+This command shows commits between January 1, 2023, and December 31, 2023.
+
+### Filtering by Author
+To filter commits by a specific author:
+```sh
+git log --author="Author Name"
+```
+
+### Viewing Changes Made in Commits
+To see the changes made in each commit, you can use:
+```sh
+git log -p
+```
+
+### Using GitHub API (Optional)
+If you need to check events like issues, pull requests, or other activities not related to commits, you might need to use the GitHub API instead of Git commands. Here's an example of how you can use `curl` to fetch events:
+```sh
+curl -H "Authorization: token YOUR_GITHUB_TOKEN" https://api.github.com/repos/OWNER/REPO/events
+```
+Replace `YOUR_GITHUB_TOKEN`, `OWNER`, and `REPO` with your GitHub token, the owner of the repository, and the repository name, respectively.
+
+These commands should help you track various activities in your GitHub repository using Git.
