@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_CREDENTIALS_ID = 'git-credentials-id' // Replace with your Jenkins credentials ID for Git
+        GIT_REPO_URL = 'https://your-repo-url.git' // Replace with your Git repository URL
+        VERSION_FILE = 'version.txt' // File containing the version number
+        NEW_VERSION = '' // This will be set during the pipeline
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                script {
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/main"]], // Check out the main branch or the branch you are working on
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [],
+                        userRemoteConfigs: [[
+                            credentialsId: env.GIT_CREDENTIALS_ID,
+                            url: env.GIT_REPO_URL
+                        ]]
+                    ])
+                }
+            }
+        }
+
+        stage('Read Current Version') {
+            steps {
+                script {
+                    def version = readFile(env.VERSION_FILE).trim()
+                    echo "Current Version: ${version}"
+                    env.CURRENT_VERSION = version
+                }
+            }
+        }
+
+        stage('Increment Version') {
+            steps {
+                script {
+                    def versionParts = env.CURRENT_VERSION.split('\\.')
+                    def major = versionParts[0].toInteger()
+                    def minor = versionParts[1].toInteger()
+                    def patch = versionParts[2].toInteger()
+
+                    // Increment the PATCH version
+                    patch += 1
+
+                    env.NEW_VERSION = "${major}.${minor}.${patch}"
+                    echo "New Version: ${env.NEW_VERSION}"
+                }
+            }
+        }
+
+        stage('Update Version File') {
+            steps {
+                script {
+                    // Update the version file with the new version
+                    writeFile file: env.VERSION_FILE, text: env.NEW_VERSION
+
+                    // Commit and push the changes
+                    sh '''
+                    git config user.email "you@example.com"
+                    git config user.name "Your Name"
+                    git checkout -b update-version
+                    git add ${VERSION_FILE}
+                    git commit -m "Bump version to ${NEW_VERSION}"
+                    git push origin update-version
+                    '''
+                }
+            }
+        }
+
+        stage('Tag Version') {
+            steps {
+                script {
+                    // Tag the repository with the new version
+                    sh '''
+                    git tag -a "v${NEW_VERSION}" -m "Release version ${NEW_VERSION}"
+                    git push origin "v${NEW_VERSION}"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Version updated successfully to ${env.NEW_VERSION}"
+        }
+        failure {
+            echo "Failed to update version."
+        }
+    }
+}
