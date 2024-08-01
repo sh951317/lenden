@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+    environment {
+    	DEST_Branch_NAME = "${GIT_BRANCH.split("/")[1]}"
+   	 //VERSION_FILE = 'version.txt' // Replace with the path to your version file
+    	def Source_Branch_NAME = sh(returnStdout: true, script: 'git log |grep -i "Merge pull" |head -1|cut -d "/" -f 2')
+   	 } 
+    
+    stages {
+        stage('Build') {
+            steps {
+		script {                     
+		   echo "Merged to BRANCH: ${env.DEST_Branch_NAME}"
+		   echo "Source Branch Name: ${Source_Branch_NAME}"
+		   //sh 'git branch -a --merged'			 
+	           }
+              }
+       	 }
+	    
+	stage('Branch_Validation') {
+            steps {
+                script {                  
+	             if ((Source_Branch_NAME.startsWith('DM-') || Source_Branch_NAME.startsWith('dm-')) && (env.DEST_Branch_NAME == 'development'))			                
+                      {
+			echo "Valid Merge of  Feature DM to Dev Branch: Source - ${Source_Branch_NAME}, ${env.DEST_Branch_NAME} "
+                      } 
+		      
+		      
+                     else if (Source_Branch_NAME.startsWith('development') && (env.DEST_Branch_NAME == 'pre-prod'))
+		      {
+		     echo "Valid Merge Request as Source and Dest branches: ${Source_Branch_NAME},${env.DEST_Branch_NAME} "
+		      }	
+		      
+                     else if (Source_Branch_NAME.startsWith('pre-prod') && (env.DEST_Branch_NAME == 'prod'))
+		      {
+		     echo "Valid Merge Request as Source and Dest branches: ${Source_Branch_NAME},${env.DEST_Branch_NAME} "
+		      }		
+		      
+		     else {
+		     echo "Invalid branches Merge as : Source - ${Source_Branch_NAME}, Destination - ${env.DEST_Branch_NAME} is not expected to be merged"
+                    
+		     error "aborting opertation"
+                     //error("Branch validation failed. Skipping further stages.")
+                    }
+		    
+ 			//currentBuild.result = 'NOT_BUILT'		    
+		    /*
+		     when { expression { return env.BRANCH_NAME == 'master'} }
+		     steps {
+                        echo 'I only execute on the master branch.'
+                      }*/			
+                  }
+              }
+          } 
+	  
+	  }
+	
+        post {
+           success {
+              echo 'Merge and push successful!'
+             }
+           failure {
+            echo 'Merge or push failed. Check logs for details.'
+             }
+        }
+    }
