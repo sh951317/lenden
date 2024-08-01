@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+
+    environment {
+        MAJOR_VERSION = "1"
+        MINOR_VERSION = "0"
+        PATCH_VERSION = "0"
+        PRE_RELEASE = "" // Leave empty if not using
+        BUILD_METADATA = "" // Leave empty if not using
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    def baseVersion = "${env.MAJOR_VERSION}.${env.MINOR_VERSION}.${env.PATCH_VERSION}"
+                    def version = baseVersion
+                    if (env.PRE_RELEASE) {
+                        version = "${version}-${env.PRE_RELEASE}"
+                    }
+                    if (env.BUILD_METADATA) {
+                        version = "${version}+${env.BUILD_METADATA}"
+                    }
+                    env.VERSION = version
+                    echo "Computed version: ${env.VERSION}"
+                }
+            }
+        }
+        // Other stages...
+    }
+}
