@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'MAJOR_VERSION', defaultValue: '1', description: 'Major version number')
+        string(name: 'MINOR_VERSION', defaultValue: '0', description: 'Minor version number')
+        string(name: 'PATCH_VERSION', defaultValue: '0', description: 'Patch version number')
+        string(name: 'PRE_RELEASE', defaultValue: '', description: 'Pre-release identifier')
+        string(name: 'BUILD_METADATA', defaultValue: '', description: 'Build metadata')
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    def baseVersion = "${params.MAJOR_VERSION}.${params.MINOR_VERSION}.${params.PATCH_VERSION}"
+                    def version = baseVersion
+                    if (params.PRE_RELEASE) {
+                        version = "${version}-${params.PRE_RELEASE}"
+                    }
+                    if (params.BUILD_METADATA) {
+                        version = "${version}+${params.BUILD_METADATA}"
+                    }
+                    env.VERSION = version
+                    echo "Computed version: ${env.VERSION}"
+                }
+            }
+        }
+        // Other stages...
+    }
+}
