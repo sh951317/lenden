@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'MAJOR_VERSION', defaultValue: '1', description: 'Major version number')
+        string(name: 'MINOR_VERSION', defaultValue: '0', description: 'Minor version number')
+        string(name: 'PATCH_VERSION', defaultValue: '0', description: 'Patch version number')
+        choice(name: 'INCREMENT_TYPE', choices: ['PATCH', 'MINOR', 'MAJOR'], description: 'Which part of the version to increment')
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    // Parse version numbers
+                    def major = params.MAJOR_VERSION.toInteger()
+                    def minor = params.MINOR_VERSION.toInteger()
+                    def patch = params.PATCH_VERSION.toInteger()
+
+                    // Increment version based on INCREMENT_TYPE
+                    switch(params.INCREMENT_TYPE) {
+                        case 'MAJOR':
+                            major += 1
+                            minor = 0
+                            patch = 0
+                            break
+                        case 'MINOR':
+                            minor += 1
+                            patch = 0
+                            break
+                        case 'PATCH':
+                            patch += 1
+                            break
+                    }
+
+                    // Format the new version
+                    def newVersion = "${major}.${minor}.${patch}"
+                    env.VERSION = newVersion
+
+                    echo "New version: ${env.VERSION}"
+                }
+            }
+        }
+
+        // Additional stages for build, test, etc.
+        stage('Build') {
+            steps {
+                echo "Building version: ${env.VERSION}"
+                // Your build steps here
+            }
+        }
+
+        stage('Post-Build') {
+            steps {
+                echo "Pipeline completed. Final version: ${env.VERSION}"
+                // Optionally, tag the source code with the new version, push changes, etc.
+            }
+        }
+    }
+}
