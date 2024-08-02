@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    stages {
+        stage('Get Current Version') {
+            steps {
+                script {
+                    // Fetch the current version from the external API
+                    def response = sh(script: 'curl -s http://version-service/api/version', returnStdout: true).trim()
+                    def currentVersion = response
+
+                    def versionParts = currentVersion.split('\\.')
+                    def major = versionParts[0].toInteger()
+                    def minor = versionParts[1].toInteger()
+                    def patch = versionParts[2].toInteger()
+
+                    // Increment the patch version (adjust as needed)
+                    patch += 1
+
+                    // Construct new version
+                    def newVersion = "${major}.${minor}.${patch}"
+
+                    // Update the version in the external service
+                    sh(script: "curl -X POST http://version-service/api/version -d 'version=${newVersion}'")
+
+                    echo "New version for this build: ${newVersion}"
+                }
+            }
+        }
+        stage('Use New Version') {
+            steps {
+                script {
+                    // Use the new version as needed
+                    echo "Using new version"
+                }
+            }
+        }
+        // Additional stages for building, testing, etc.
+    }
+}
