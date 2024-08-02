@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    environment {
+        // Fetch the version number from Jenkins credentials
+        VERSION_CREDENTIALS = credentials('version-credential-id')
+    }
+    stages {
+        stage('Get Current Version') {
+            steps {
+                script {
+                    // Retrieve the version from credentials
+                    def currentVersion = env.VERSION_CREDENTIALS
+                    def versionParts = currentVersion.split('\\.')
+                    def major = versionParts[0].toInteger()
+                    def minor = versionParts[1].toInteger()
+                    def patch = versionParts[2].toInteger()
+
+                    // Increment the patch version (adjust as needed)
+                    patch += 1
+
+                    // Construct new version
+                    def newVersion = "${major}.${minor}.${patch}"
+
+                    // Update the version in Jenkins credentials
+                    // Note: Jenkins credentials cannot be updated directly from pipeline
+                    // So, we'll use the updated version for this build and will need an external mechanism to update it.
+
+                    echo "New version for this build: ${newVersion}"
+
+                    // For demonstration purposes, print new version
+                    // In real usage, you'd store this new version somewhere persistent
+                }
+            }
+        }
+        stage('Use New Version') {
+            steps {
+                script {
+                    // Use the new version as needed
+                    echo "Using version ${env.VERSION_CREDENTIALS}"
+                }
+            }
+        }
+        // Additional stages for building, testing, etc.
+    }
+}
