@@ -1,0 +1,52 @@
+To check the event shown in your screenshot using Git commands, you can look into the repository's commit history and references for branch creation or pushes. Based on the information in the screenshot, the event is a `push` to the branch `refs/heads/pre-prod`. Here's how you can check this:
+
+### Check Recent Pushes
+1. **Fetch All Updates:**
+   Ensure you have the latest data from the remote repository.
+   ```sh
+   git fetch --all
+   ```
+
+2. **Check the Specific Branch:**
+   You can look at the history of the `pre-prod` branch to see recent commits.
+   ```sh
+   git log pre-prod
+   ```
+   This will show the commit history of the `pre-prod` branch. You can identify recent commits, including the one from the push event.
+
+3. **Check All Branches for Recent Commits:**
+   If you want to see recent commits across all branches, you can use:
+   ```sh
+   git log --all --oneline --graph --decorate
+   ```
+   This command shows a graph of all branches with recent commits.
+
+4. **Find Specific Commits:**
+   If you know the specific commit hash from the event payload (shown in the payload JSON), you can directly check that commit:
+   ```sh
+   git show <commit-hash>
+   ```
+
+### Example Workflow
+Given the branch in the payload (`refs/heads/pre-prod`), you can specifically check that branch:
+
+```sh
+# Fetch all updates
+git fetch --all
+
+# Check the log of the pre-prod branch
+git log pre-prod
+
+# Optionally, if you know the specific commit hash from the payload
+git show <commit-hash>
+```
+
+If you need to check whether the branch was created recently or if it already existed, you can compare the branch creation date using the following command:
+
+```sh
+git show --format=%aD pre-prod
+```
+
+This command will show the creation date of the latest commit in the `pre-prod` branch.
+
+By following these steps, you can investigate the specific events and changes pushed to your Git repository as indicated by the webhook delivery in your screenshot.
