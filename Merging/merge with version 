@@ -1,0 +1,99 @@
+To achieve the specified semantic versioning requirements using Jenkins Pipeline, you can utilize a scripted pipeline with custom logic to update the version based on the source and destination branches. Below is an example of how you might implement this:
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        VERSION_FILE = 'version.txt'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Determine Version Update') {
+            steps {
+                script {
+                    def sourceBranch = env.GIT_BRANCH
+                    def destinationBranch = env.CHANGE_TARGET
+
+                    if (destinationBranch == 'pre-prod') {
+                        if (sourceBranch == 'DM') {
+                            updateVersion('major')
+                        } else if (sourceBranch == 'PR') {
+                            updateVersion('minor')
+                        }
+                    } else if (destinationBranch == 'prod' && sourceBranch == 'pre-prod') {
+                        updateVersion('patch')
+                    } else {
+                        echo "No version update required"
+                    }
+                }
+            }
+        }
+
+        stage('Commit and Push Version') {
+            steps {
+                script {
+                    if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+                        sh """
+                            git add ${VERSION_FILE}
+                            git commit -m 'Updated version'
+                            git push origin ${destinationBranch}
+                        """
+                    } else {
+                        echo "Skipping version commit due to build failure"
+                    }
+                }
+            }
+        }
+    }
+}
+
+def updateVersion(String versionType) {
+    def version = readFile(env.VERSION_FILE).trim()
+    def (major, minor, patch) = version.tokenize('.').collect { it.toInteger() }
+
+    switch (versionType) {
+        case 'major':
+            major++
+            minor = 0
+            patch = 0
+            break
+        case 'minor':
+            minor++
+            patch = 0
+            break
+        case 'patch':
+            patch++
+            break
+    }
+
+    def newVersion = "${major}.${minor}.${patch}"
+    writeFile file: env.VERSION_FILE, text: newVersion
+
+    echo "Updated version to ${newVersion}"
+}
+```
+
+### Explanation:
+
+1. **Checkout Stage**: This checks out the source code from your SCM (e.g., Git).
+2. **Determine Version Update Stage**: This stage determines which version component to update based on the source and destination branches.
+3. **Commit and Push Version Stage**: This stage commits and pushes the updated version back to the destination branch.
+
+### Functions and Logic:
+
+- **updateVersion(String versionType)**: This function reads the current version from `version.txt`, increments the appropriate part (major, minor, or patch), and writes the new version back to the file.
+- **Branch Conditions**:
+  - Merging `DM` into `pre-prod` increments the major version.
+  - Merging `PR` into `pre-prod` increments the minor version.
+  - Merging `pre-prod` into `prod` increments the patch version.
+
+Make sure you have a `version.txt` file in your repository containing the current version, e.g., `1.0.0`.
+
+Adjust the pipeline script as necessary to fit your specific CI/CD setup and environment.
