@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    triggers {
+        githubPush() // This triggers the pipeline on GitHub push events
+    }
+
+    environment {
+        GITHUB_REPO = 'OWNER/REPO'
+        GITHUB_TOKEN = credentials('github-token') // Replace with your Jenkins credential ID
+    }
+
+    stages {
+        stage('Check GitHub Events') {
+            steps {
+                script {
+                    // Fetch events using GitHub API
+                    def response = httpRequest(
+                        url: "https://api.github.com/repos/${env.GITHUB_REPO}/events",
+                        customHeaders: [[name: 'Authorization', value: "token ${env.GITHUB_TOKEN}"]],
+                        validResponseCodes: '200'
+                    )
+                    
+                    def events = readJSON text: response.content
+                    def branchCreationEvent = events.find { it.type == 'CreateEvent' && it.payload.ref_type == 'branch' }
+
+                    if (branchCreationEvent) {
+                        echo "Branch '${branchCreationEvent.payload.ref}' created in repository '${branchCreationEvent.repo.name}'."
+                        // Add any additional steps to handle the branch creation event
+                    } else {
+                        echo "No new branch creation event found."
+                    }
+                }
+            }
+        }
+    }
+}
