@@ -1,0 +1,54 @@
+Git itself does not have built-in commands to directly check GitHub events (like webhooks or API events). However, you can use the GitHub API to fetch these events. Here are the steps to check GitHub events using GitHub's API:
+
+### Using GitHub API
+
+1. **Personal Access Token (Optional but recommended):**
+   - Generate a personal access token from your GitHub account to authenticate API requests. This helps you avoid rate limits and access private repositories if needed.
+
+2. **Check Repository Events:**
+   - Use `curl` or any HTTP client to fetch events for a repository. Replace `OWNER` and `REPO` with your repository details.
+   ```sh
+   curl -H "Authorization: token YOUR_GITHUB_TOKEN" https://api.github.com/repos/OWNER/REPO/events
+   ```
+
+3. **Check Specific Event Types:**
+   - To fetch specific events like push events, you might need to parse the events or use the specific endpoint if available. For example, GitHub provides a specific endpoint for issues, pull requests, and other event types.
+
+### Example: Fetching Repository Events
+
+```sh
+curl -H "Authorization: token YOUR_GITHUB_TOKEN" https://api.github.com/repos/OWNER/REPO/events
+```
+
+### Example: Fetching Push Events
+
+While there is no direct endpoint for push events, you can filter events fetched from the above command for `push` events using a tool like `jq` (a lightweight and flexible command-line JSON processor).
+
+```sh
+curl -H "Authorization: token YOUR_GITHUB_TOKEN" https://api.github.com/repos/OWNER/REPO/events | jq '.[] | select(.type=="PushEvent")'
+```
+
+### Using GitHub CLI
+
+GitHub provides a CLI tool called `gh` which makes it easier to interact with the GitHub API. Here’s how you can use it:
+
+1. **Install GitHub CLI:**
+   - Follow the installation instructions from the [GitHub CLI documentation](https://cli.github.com/).
+
+2. **Authenticate GitHub CLI:**
+   ```sh
+   gh auth login
+   ```
+
+3. **Fetch Repository Events:**
+   ```sh
+   gh api -H "Accept: application/vnd.github.v3+json" /repos/OWNER/REPO/events
+   ```
+
+### Example: Using GitHub CLI to Fetch Events
+
+```sh
+gh api -H "Accept: application/vnd.github.v3+json" /repos/OWNER/REPO/events
+```
+
+These methods will help you check the events in your GitHub repository. If you're specifically interested in webhooks or detailed event types, you might need to parse the API responses accordingly.
