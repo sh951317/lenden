@@ -1,0 +1,32 @@
+https://www.thegeekstuff.com/2019/03/git-create-dev-branch-and-merge/
+
+https://github.com/Kunena/Kunena-Forum/wiki/Create-a-new-branch-with-git-and-manage-branches
+
+
+https://www.shiksha.com/online-courses/articles/how-to-push-code-to-github-blogId-159967
+
+
+https://www.linkedin.com/pulse/integrating-git-github-docker-jenkins-pallabi-roy?utm_source=share&utm_medium=member_android&utm_campaign=share_via
+
+
+https://dev.to/prodevopsguytech/most-useful-devopscloud-github-repositories-to-learning-and-become-a-devops-engineer-24k5
+
+
+
+
+#!/bin/bash
+
+
+CURRENT_VERSION='1.0.1'
+Ver_Sion="echo ${CURRENT_VERSION} | awk -F "." '{print $1,$2,$3}'"
+echo ${Ver_Sion}
+versionParts=CURRENT_VERSION.split('\\.')
+major = versionParts[0].toInteger()
+minor = versionParts[1].toInteger()
+patch = versionParts[2].toInteger()	
+CURRENT_VERSION2 =  "oc get is/${APP_NAME} -n ${NAME_SPACE} --output=jsonpath='{.status.tags[*].tag}'"
+patch = (patch.toInteger() + 1).toString()
+NEW_VERSION = "${major}.${minor}.${patch}"
+echo "Current version is: ${CURRENT_VERSION}"
+echo "New version is: ${NEW_VERSION}"
+echo "TCS Current version is: ${CURRENT_VERSION_Later}"
