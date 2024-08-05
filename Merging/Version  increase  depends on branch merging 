@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'SOURCE_BRANCH', defaultValue: 'develop', description: 'Source branch to merge from')
+        string(name: 'DEST_BRANCH', defaultValue: 'main', description: 'Destination branch to merge into')
+        choice(name: 'VERSION_PART', choices: ['patch', 'minor', 'major'], description: 'Part of the version to increment')
+    }
+
+    environment {
+        REPO_URL = 'git@github.com:your-repo/your-project.git'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Clone the repository and checkout the destination branch
+                    git branch: params.DEST_BRANCH, url: env.REPO_URL
+                }
+            }
+        }
+
+        stage('Merge Source to Destination') {
+            steps {
+                script {
+                    sh "git checkout ${params.DEST_BRANCH}"
+                    sh "git merge origin/${params.SOURCE_BRANCH}"
+                }
+            }
+        }
+
+        stage('Increment Version') {
+            steps {
+                script {
+                    // Increment the version based on VERSION_PART
+                    sh """
+                    CURRENT_VERSION=\$(cat VERSION)
+                    NEW_VERSION=\$(semver bump ${params.VERSION_PART} \$CURRENT_VERSION)
+                    echo \$NEW_VERSION > VERSION
+                    """
+                }
+            }
+        }
+
+        stage('Commit and Push') {
+            steps {
+                script {
+                    sh """
+                    git config user.email "your-email@example.com"
+                    git config user.name "Jenkins"
+                    git add VERSION
+                    git commit -m "Increment version to \$NEW_VERSION"
+                    git push origin ${params.DEST_BRANCH}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
