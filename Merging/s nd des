@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+
+    environment {
+        VERSION_FILE = 'version.txt'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Check out the source code
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Determine Version Increment') {
+            steps {
+                script {
+                    // Read the current version from the version file
+                    def version = readFile(env.VERSION_FILE).trim()
+                    def (major, minor, patch) = version.tokenize('.').collect { it.toInteger() }
+
+                    // Determine the branch names
+                    def sourceBranch = env.CHANGE_BRANCH
+                    def destinationBranch = env.CHANGE_TARGET
+
+                    // Determine the version increment based on the merging rules
+                    if (sourceBranch == 'dm' && destinationBranch == 'pre-prod') {
+                        major++
+                        minor = 0
+                        patch = 0
+                    } else if (sourceBranch == 'pr' && destinationBranch == 'pre-prod') {
+                        minor++
+                        patch = 0
+                    } else if (sourceBranch == 'pre-prod' && destinationBranch == 'prod') {
+                        patch++
+                    }
+
+                    // Create the new version string
+                    def newVersion = "${major}.${minor}.${patch}"
+                    
+                    // Write the new version back to the version file
+                    writeFile(file: env.VERSION_FILE, text: newVersion)
+                    
+                    // Set the new version as an environment variable
+                    env.NEW_VERSION = newVersion
+
+                    // Print the new version to the console
+                    echo "New version: ${newVersion}"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Your build steps go here
+                echo "Building version ${env.NEW_VERSION}"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // Your deployment steps go here
+                echo "Deploying version ${env.NEW_VERSION}"
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                // Archive the version file for future reference
+                archiveArtifacts artifacts: env.VERSION_FILE, allowEmptyArchive: true
+            }
+        }
+    }
+}
