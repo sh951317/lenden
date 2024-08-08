@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Create Argo CD Service Account') {
+            steps {
+                script {
+                    // Define the YAML for the Service Account
+                    def serviceAccountYaml = '''
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-service-account
+  namespace: argocd
+'''
+
+                    // Define the YAML for the ClusterRole and ClusterRoleBinding
+                    def roleBindingYaml = '''
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-service-account-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-service-account-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-service-account-role
+subjects:
+- kind: ServiceAccount
+  name: argocd-service-account
+  namespace: argocd
+'''
+
+                    // Write YAML to files
+                    writeFile file: 'service-account.yaml', text: serviceAccountYaml
+                    writeFile file: 'role-binding.yaml', text: roleBindingYaml
+
+                    // Apply the service account YAML
+                    sh 'kubectl apply -f service-account.yaml'
+
+                    // Apply the role binding YAML
+                    sh 'kubectl apply -f role-binding.yaml'
+                }
+            }
+        }
+    }
+}
