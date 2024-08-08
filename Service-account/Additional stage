@@ -1,0 +1,11 @@
+stage('Update Argo CD Server') {
+    steps {
+        script {
+            sh '''
+            kubectl patch deployment argocd-server \
+            -n argocd \
+            -p '{"spec": {"template": {"spec": {"serviceAccountName": "argocd-service-account"}}}}'
+            '''
+        }
+    }
+}
