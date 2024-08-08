@@ -1,0 +1,85 @@
+To create a service account for Argo CD, you'll need to follow these steps:
+
+### Step 1: Create a Service Account
+First, create a Kubernetes Service Account that Argo CD will use to access the Kubernetes cluster.
+
+```bash
+kubectl create serviceaccount <service-account-name> -n <namespace>
+```
+Replace `<service-account-name>` with your desired service account name, and `<namespace>` with the namespace where Argo CD is installed (typically `argocd`).
+
+### Step 2: Create a Role or ClusterRole
+You need to create a Role or ClusterRole that defines the permissions for the Service Account. A ClusterRole has cluster-wide permissions, while a Role is scoped to a specific namespace.
+
+Here is an example of a ClusterRole:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-service-account-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+```
+
+### Step 3: Bind the Role/ClusterRole to the Service Account
+Next, create a RoleBinding or ClusterRoleBinding to bind the Role/ClusterRole to the Service Account:
+
+For a ClusterRole:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-service-account-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-service-account-role
+subjects:
+- kind: ServiceAccount
+  name: <service-account-name>
+  namespace: <namespace>
+```
+
+### Step 4: Update Argo CD to Use the Service Account
+Once the Service Account is created and bound, you need to update Argo CD to use this Service Account.
+
+You can do this by editing the Argo CD deployment (typically named `argocd-server`):
+
+```bash
+kubectl edit deployment argocd-server -n <namespace>
+```
+
+In the deployment YAML, find the `serviceAccountName` field under the `spec.template.spec` section and set it to your Service Account's name:
+
+```yaml
+spec:
+  template:
+    spec:
+      serviceAccountName: <service-account-name>
+```
+
+### Step 5: Restart Argo CD Server
+After updating the deployment, restart the Argo CD server to apply the changes:
+
+```bash
+kubectl rollout restart deployment argocd-server -n <namespace>
+```
+
+### Step 6: Verify the Service Account is Being Used
+Finally, verify that the Argo CD server is using the correct Service Account by checking the logs or the deployment details.
+
+```bash
+kubectl describe deployment argocd-server -n <namespace>
+```
+
+That's it! Your Argo CD should now be using the specified Service Account.
