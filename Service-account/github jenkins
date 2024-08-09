@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_CREDENTIALS = credentials('github-credentials-id')  // Use your GitHub credentials here
+        ARGOCD_SERVER = 'https://argocd-eip-dev.ats-asia-dev-int.scarlet.ap-southeast-1.example.com'  // Replace with your ArgoCD server URL
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'service-account', 
+                    url: 'https://github.axa.com/shubham-ext/branch-merging.git', 
+                    credentialsId: "${GITHUB_CREDENTIALS}"
+            }
+        }
+
+        stage('Create Service Account') {
+            steps {
+                script {
+                    // Apply the service account and role binding YAML to the OpenShift cluster
+                    sh 'oc apply -f service-account.yaml'
+                }
+            }
+        }
+
+        stage('Get Service Account Token') {
+            steps {
+                script {
+                    // Retrieve the token from the service account secret
+                    def saToken = sh(script: "oc get secret $(oc get serviceaccount argocd-service-account -n argocd -o jsonpath='{.secrets[0].name}') -n argocd -o jsonpath='{.data.token}' | base64 --decode", returnStdout: true).trim()
+                    env.ARGOCD_TOKEN = saToken
+                }
+            }
+        }
+
+        stage('Login to ArgoCD') {
+            steps {
+                script {
+                    // Log in to ArgoCD using the service account token
+                    sh "argocd login ${ARGOCD_SERVER} --token ${ARGOCD_TOKEN} --insecure"
+                }
+            }
+        }
+        
+        stage('Sync ArgoCD Application') {
+            steps {
+                script {
+                    // Perform ArgoCD operations, such as syncing an app
+                    sh "argocd app sync my-app-name"  // Replace 'my-app-name' with your actual ArgoCD app name
+                }
+            }
+        }
+    }
+}
