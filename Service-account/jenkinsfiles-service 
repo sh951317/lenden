@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = credentials('kubeconfig-credentials-id')  // Replace with your Jenkins Kubeconfig credential ID
+        ARGOCD_SERVER = 'your-argocd-server.com'               // Replace with your ArgoCD server URL
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-org/your-repo.git'  // Replace with your GitHub repository URL
+            }
+        }
+
+        stage('Create Service Account') {
+            steps {
+                script {
+                    // Apply the service account and role binding YAML to the OpenShift cluster
+                    sh 'oc apply -f service-account.yaml'
+                }
+            }
+        }
+
+        stage('Get Service Account Token') {
+            steps {
+                script {
+                    // Retrieve the token from the service account secret
+                    def saToken = sh(script: "oc get secret $(oc get serviceaccount argocd-service-account -n argocd -o jsonpath='{.secrets[0].name}') -n argocd -o jsonpath='{.data.token}' | base64 --decode", returnStdout: true).trim()
+                    env.ARGOCD_TOKEN = saToken
+                }
+            }
+        }
+
+        stage('Login to ArgoCD') {
+            steps {
+                script {
+                    // Log in to ArgoCD using the service account token
+                    sh "argocd login ${ARGOCD_SERVER} --token ${ARGOCD_TOKEN} --insecure"
+                }
+            }
+        }
+        
+        stage('Sync ArgoCD Application') {
+            steps {
+                script {
+                    // Perform ArgoCD operations, such as syncing an app
+                    sh "argocd app sync my-app-name"  // Replace 'my-app-name' with your actual ArgoCD app name
+                }
+            }
+        }
+    }
+}
