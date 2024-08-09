@@ -1,0 +1,9 @@
+stage('Get Service Account Token') {
+    steps {
+        script {
+            // Escape the $ sign in the shell command or use single quotes to avoid Groovy interpreting it
+            def saToken = sh(script: "oc get secret \$(oc get serviceaccount argocd-service-account -n argocd -o jsonpath='{.secrets[0].name}') -n argocd -o jsonpath='{.data.token}' | base64 --decode", returnStdout: true).trim()
+            env.ARGOCD_TOKEN = saToken
+        }
+    }
+}
