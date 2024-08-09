@@ -1,0 +1,20 @@
+The error you're encountering (`command not found: argood`) suggests that the command `argood` is not recognized by the shell during the Jenkins pipeline execution. This usually happens due to a typo or because the command is not installed or available in the environment where the pipeline is running.
+
+Here’s how you can troubleshoot and resolve the issue:
+
+1. **Check for Typos**: The command `argood` seems like it might be a typo. If you intended to use `argocd`, which is the correct command to interact with ArgoCD, you should correct the typo in your script:
+   ```sh
+   argocd login https://argocd-eip-dev.ats-asia-dev-int.scarlet.ap-southeast-1.aws.openpaas.axa-cloud.com/ --token --insecure
+   ```
+
+2. **Ensure ArgoCD CLI is Installed**: If the command is correct, ensure that the ArgoCD CLI (`argocd`) is installed on the Jenkins agent or environment where the pipeline is running. If it's not installed, you can install it by adding a step in your pipeline to download and install the ArgoCD CLI.
+
+   Example of installing the ArgoCD CLI:
+   ```sh
+   curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.5.5/argocd-linux-amd64
+   chmod +x /usr/local/bin/argocd
+   ```
+
+3. **Check PATH Environment Variable**: Ensure that the directory containing the `argocd` binary is included in the `PATH` environment variable in the Jenkins environment.
+
+If you make these adjustments and the error persists, consider sharing the relevant part of the Jenkins pipeline configuration for further analysis.
